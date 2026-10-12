@@ -111,7 +111,7 @@
 <body>
 
 <aside>
-  <h1>FBX to GLB<small>Runs in your browser. Nothing is uploaded. (v6)</small></h1>
+  <h1>FBX to GLB<small>Runs in your browser. Nothing is uploaded. (v8)</small></h1>
 
   <section>
     <h2>Files</h2>
@@ -192,9 +192,10 @@ window.addEventListener('error', function (e) { window.__fbxErr = e.message; });
 setTimeout(function () {
   if (window.__fbxReady) return;
   var e = document.getElementById('empty');
-  e.innerHTML = '<p><strong>The viewer could not start</strong>It loads Three.js from the internet, so it needs a connection. Use a recent Chrome, Edge, Firefox or Safari.' + (window.__fbxErr ? '<br><br>' + window.__fbxErr : '') + '</p>';
+  e.innerHTML = '<p><strong>The viewer could not start</strong>It loads Three.js from the internet, so it needs an active internet connection.' + (window.__fbxErr ? '<br><br>' + window.__fbxErr : '') + '</p>';
 }, 6000);
 </script>
+
 <script type="importmap">
 {
   "imports": {
@@ -203,6 +204,7 @@ setTimeout(function () {
   }
 }
 </script>
+
 <script type="module">
 import * as THREE from 'three';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
@@ -235,7 +237,7 @@ fill.position.set(-4, 2, -3);
 scene.add(fill);
 
 let grid = null;
-const holder = new THREE.Group();   // exported root; carries the scale
+const holder = new THREE.Group();
 holder.name = 'Scene';
 scene.add(holder);
 
@@ -321,7 +323,7 @@ addEventListener('drop', e => {
   if (e.dataTransfer?.files?.length) takeFiles(e.dataTransfer.files);
 });
 
-/* ---------- Material cleanup (so preview == export) ---------- */
+/* ---------- Material cleanup ---------- */
 const validTex = t => !!(t && t.image && (t.image.width || t.image.naturalWidth || t.image.data));
 
 function toStandard(m, cache) {
@@ -352,7 +354,6 @@ function toStandard(m, cache) {
   cache.set(m.uuid, out);
   return out;
 }
-
 
 /* ---------- Embedded images ---------- */
 const IMG_EXT = new Set(['png', 'jpg', 'jpeg', 'bmp', 'tif', 'tiff', 'tga', 'webp', 'gif']);
@@ -434,14 +435,14 @@ async function loadModel() {
     obj.traverse(o => { if (o.isMesh) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => origMats.add(m)); });
     scanInfo = { refs: [...origMats].filter(m => m.map).length, emb: embedded.length };
     const cache = new Map();
-    const texSet = new Set();
     let meshes = 0, tris = 0;
     const bones = new Set();
+    
     obj.traverse(o => {
       if (o.isBone) bones.add(o);
       if (!o.isMesh) return;
       
-      // Weld shared/split vertices together to prevent inflation
+      // Weld split vertices together to fix inflation
       o.geometry = BufferGeometryUtils.mergeVertices(o.geometry);
 
       meshes++;
@@ -450,6 +451,7 @@ async function loadModel() {
       o.material = Array.isArray(o.material) ? o.material.map(m => toStandard(m, cache)) : toStandard(o.material, cache);
       o.frustumCulled = false;
     });
+    
     mats = [...new Set(cache.values())];
     mats.forEach(m => {
       if (m.map) m.color.set(0xffffff);
@@ -490,7 +492,7 @@ async function loadModel() {
         ? 'This FBX doesn\u2019t reference any textures. Assign your images under Materials.'
         : (scanInfo.refs
           ? 'This FBX points to a texture but doesn\u2019t contain a usable image. Drop your texture image(s) anywhere on the page.'
-          : 'This FBX has no textures (common with Mixamo). Drop your texture image(s) anywhere on the page.'));
+          : 'This FBX has no textures. Drop your texture image(s) anywhere on the page.'));
     }
   } catch (err) {
     console.error(err);
@@ -501,7 +503,7 @@ async function loadModel() {
   }
 }
 
-/* ---------- Texture assignment (manual + automatic) ---------- */
+/* ---------- Texture assignment ---------- */
 const SLOTS = [['map', 'Base color'], ['normalMap', 'Normal'], ['aoMap', 'Occlusion'], ['emissiveMap', 'Emissive']];
 var mats = [];
 const ORIG = new WeakMap();
@@ -718,7 +720,7 @@ function clearModel() {
   model = null; clips = [];
 }
 
-/* ---------- Scale, framing ---------- */
+/* ---------- Scale & framing ---------- */
 function applyScale() {
   const s = parseFloat($('scale').value);
   holder.scale.setScalar(s > 0 ? s : 1);
