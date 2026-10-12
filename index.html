@@ -111,7 +111,7 @@
 <body>
 
 <aside>
-  <h1>FBX to GLB<small>Runs in your browser. Nothing is uploaded. (v8)</small></h1>
+  <h1>FBX to GLB<small>Runs in your browser. Nothing is uploaded. (v9)</small></h1>
 
   <section>
     <h2>Files</h2>
@@ -211,7 +211,7 @@ import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TGALoader } from 'three/addons/loaders/TGALoader.js';
-import { BufferGeometryUtils } from 'three/addons/utils/BufferGeometryUtils.js';
+import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 
 const $ = id => document.getElementById(id);
 
@@ -442,7 +442,7 @@ async function loadModel() {
       if (o.isBone) bones.add(o);
       if (!o.isMesh) return;
       
-      // Weld split vertices together to fix inflation
+      // Weld split vertices together via namespace utility
       o.geometry = BufferGeometryUtils.mergeVertices(o.geometry);
 
       meshes++;
